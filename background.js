@@ -9,37 +9,109 @@ https://stackoverflow.com/questions/1531093/how-do-i-get-the-current-date-in-jav
 https://gist.github.com/srsudar/e9a41228f06f32f272a2
 */
 
-function log(str) {
-  chrome.extension.getBackgroundPage().console.log(str);
+createFunctionStringFormat();
+
+chrome.contextMenus.create({title: "Copy page to BibTeX", visible: true, onclick: function() {
+  // Get the data.
+  fillDateData();
+  // Get the title and URL.
+  fillTitleAndUrlData(function(){
+    // As this callback is called when the title and url are set,
+    // handle the copying here. Outside this function we do not
+    // know whether or not the title and url are set.
+    copy(getBibTexString());
+  });
+}});
+
+const data = {
+  url: null,
+  title: null,
+  date: null
+};
+
+const format = "@online{site_...,\n  title = {{0}},\n  url = {{1}},\n  urldate = {{2}}\n}\n";
+
+/**
+ * Retrieve and set the date in the `data` object.
+ */
+function fillDateData(){
+  data.date = getDateString();
 }
 
 /**
- * Function which copies `str` to the users clipboard.
+ * Retrieve the title and url from the current page. As this is
+ * an async operation, a callback needs to be provided which gets
+ * called after the title and url are set in the `data` object.
+ *
+ * @param  {Function} callback Is called after the title and url are set.
+ */
+function fillTitleAndUrlData(callback){
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+    data.url    = tabs[0].url;
+    data.title  = tabs[0].title;
+
+    callback();
+  });
+}
+
+/**
+ * Fills the format with data and returns the result.
+ *
+ * @return string A string based on `format` with data from `data`.
+ */
+function getBibTexString(){
+  return String.format(format, data.title, data.url, data.date);
+}
+
+/**
+ * Function which copies `str` to the users clipboard. It uses the
+ * `sandbox` textarea to achieve this. First, the string is put into
+ * the hidden textarea, and then the contents of the textarea are
+ * copied into the user's clipboard.
  *
  * https://gist.github.com/srsudar/e9a41228f06f32f272a2
  */
 function copy(str) {
-    var sandbox = $('#sandbox').val(str).select();
+    const sandbox = $('#sandbox').val(str).select();
     document.execCommand('copy');
     sandbox.val('');
 }
 
-function createBibTexString(tabs){
-  copy("@online{site_,\n" +
-    "  title = {" + tabs[0].title + "},\n" +
-    "  url = {" + tabs[0].url + "},\n" +
-    "  urldate = {" + getDateString() + "}\n" +
-    "}");
-}
-
+/**
+ * Returns a string of the date today in format yyyy-mm-dd.
+ * https://stackoverflow.com/a/19079030
+ *
+ * @return string Date of today in format yyyy-mm-dd.
+ */
 function getDateString() {
   return new Date().toJSON().slice(0,10).replace(/-/g,'-');
 }
 
-function getTab() {
-  chrome.tabs.query({active: true, currentWindow: true}, createBibTexString);
+/**
+ * Create a new function in the String class to format like printf.
+ *
+ * https://stackoverflow.com/a/4673436
+ */
+function createFunctionStringFormat(){
+  if (!String.format) {
+    String.format = function(format) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return format.replace(/{(\d+)}/g, function(match, number) {
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+        ;
+      });
+    };
+  }
 }
 
-chrome.contextMenus.create({title: "Copy page to BibTeX", visible: true, onclick: function() {
-  getTab();
-}});
+/**
+ * A simple logging function to make code more readable and to make
+ * it easier to log data.
+ *
+ * @param  string str string to log.
+ */
+function log(str) {
+  chrome.extension.getBackgroundPage().console.log(str);
+}
