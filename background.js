@@ -12,15 +12,18 @@ https://gist.github.com/srsudar/e9a41228f06f32f272a2
 createFunctionStringFormat();
 
 chrome.contextMenus.create({title: "Copy page to BibTeX", visible: true, onclick: function() {
-  // Get the data.
-  fillDateData();
-  // Get the title and URL.
-  fillTitleAndUrlData(function(){
+  const cb = function(){
     // As this callback is called when the title and url are set,
     // handle the copying here. Outside this function we do not
     // know whether or not the title and url are set.
     copy(getBibTexString());
-  });
+  }
+
+  // Get the data.
+  fillDateData();
+  // Get the title and URL.
+  fillTitleAndUrlData(cb);
+  fillFormat(cb);
 }});
 
 const data = {
@@ -29,7 +32,7 @@ const data = {
   date: null
 };
 
-const format = "@online{site_...,\n  title = {{0}},\n  url = {{1}},\n  urldate = {{2}}\n}\n";
+let format = null;
 
 /**
  * Retrieve and set the date in the `data` object.
@@ -50,17 +53,43 @@ function fillTitleAndUrlData(callback){
     data.url    = tabs[0].url;
     data.title  = tabs[0].title;
 
-    callback();
+    if (format !== null)
+      callback();
+  });
+}
+
+/**
+ * Retrieve the format from storage.
+ *
+ * @param  {Function} callback Is called when all data is available.
+ */
+function fillFormat(callback) {
+  chrome.storage.sync.get("format", function(obj)
+  {
+    if (obj.format !== undefined) {
+      format = obj.format;
+    } else {
+      format = "@online{site_...,\n  title = {{0}},\n  url = {{1}},\n  urldate = {{2}}\n}\n";
+      chrome.storage.sync.set({"format": format});
+    }
+
+    if (data.title !== null)
+      callback();
   });
 }
 
 /**
  * Fills the format with data and returns the result.
+ * Also sets the format to null.
  *
  * @return string A string based on `format` with data from `data`.
  */
-function getBibTexString(){
-  return String.format(format, data.title, data.url, data.date);
+function getBibTexString() {
+  const str = String.format(format, data.title, data.url, data.date);
+
+  format = null;
+
+  return str;
 }
 
 /**
