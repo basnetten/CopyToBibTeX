@@ -13,6 +13,11 @@ function log(str) {
   chrome.extension.getBackgroundPage().console.log(str);
 }
 
+/**
+ * Function which copies `str` to the users clipboard.
+ *
+ * https://gist.github.com/srsudar/e9a41228f06f32f272a2
+ */
 function copy(str) {
     var sandbox = $('#sandbox').val(str).select();
     document.execCommand('copy');

@@ -3,17 +3,14 @@
     "page": "bg.html"
   },
   "manifest_version": 2,
-  "name": "BibTex Copy",
-  "description": "Copy page information in online BibTex style.",
+  "name": "Copy to BibTeX",
+  "description": "Copy page information in online BibTeX style.",
   "version": "1",
   "author": "Bas Netten",
   "browser_action": {
-    "default_title": "BibTex Copy"
+    "default_title": "Copy to BibTeX"
   },
   "chrome_url_overrides" : {
-  },
-  "icons": {
-    "16": "icon-bitty.png"
   },
   "permissions": [
     "activeTab",
