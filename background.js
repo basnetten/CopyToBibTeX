@@ -40,6 +40,6 @@ function getTab() {
   chrome.tabs.query({active: true, currentWindow: true}, createBibTexString);
 }
 
-chrome.contextMenus.create({title: "Search Google Maps", visible: true, onclick: function() {
+chrome.contextMenus.create({title: "Copy page to BibTeX", visible: true, onclick: function() {
   getTab();
 }});
